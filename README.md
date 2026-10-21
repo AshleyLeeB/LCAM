@@ -1,16 +1,16 @@
 # LCAM
 
-在 **AMLWorld** 图数据上的少样本反洗钱（AML）节点分类实现：**ProtoMAML + 加权 GraphConv（GCN）**，并通过 **LCAM**（layer-wise 内外梯度门控混合）调节 meta 更新。
+Few-shot anti–money laundering (AML) **node classification** on **AMLWorld**: **ProtoMAML + weighted GraphConv (GCN)**, with **LCAM** (layer-wise inner/outer gradient gating) modulating meta-updates.
 
-本仓库为论文/复现用精简版：单数据集 **AMLWorld**、单方法 **LCAM**、骨干 **GraphConv**（加权 MPNN，`model_types: ['GCN']`）。
+This repo is a slim reproduction bundle: **AMLWorld** only, **LCAM** only, backbone **GraphConv** (weighted MPNN, `model_types: ['GCN']`).
 
-## 环境
+## Environment
 
-- Python **3.8**（推荐）
-- **CUDA** 可选；CPU 可跑但较慢
-- 依赖见 [`requirements.txt`](requirements.txt)
+- Python **3.8** (recommended)
+- **CUDA** optional; CPU works but is slower
+- Dependencies: [`requirements.txt`](requirements.txt)
 
-PyTorch 与 DGL 需版本匹配。示例（CUDA 12.4）：
+PyTorch and DGL versions must match. Example (CUDA 12.4):
 
 ```bash
 pip install torch==2.4.0 --index-url https://download.pytorch.org/whl/cu124
@@ -18,101 +18,102 @@ pip install dgl -f https://data.dgl.ai/wheels/torch-2.4/cu124/repo.html
 pip install -r requirements.txt
 ```
 
-## 数据
+## Data
 
-数据根目录：`Data/AMLWorld/Data/`（亦可通过 [`paths.py`](paths.py) 中的 `AMLWORLD` 修改）。
+Data root: `Data/AMLWorld/Data/` (override via `AMLWORLD` in [`paths.py`](paths.py)).
 
-训练脚本会读取：
+Training expects:
 
-| 文件 | 说明 |
-|------|------|
-| `features_5.npy` | 节点特征 |
-| `new_graph_guiyihua.pkl` | DGL 图（需 `time_id` 与边属性 `amount`） |
-| `label.pkl` | 节点标签 |
-| `train_1.csv` … `train_6.csv` | 6 个 meta-train 划分 |
-| `val.csv` / `test.csv` | 验证 / 测试划分 |
+| File | Description |
+|------|-------------|
+| `features_5.npy` | Node features |
+| `new_graph_guiyihua.pkl` | DGL graph (`time_id`, edge attr `amount`) |
+| `label.pkl` | Node labels |
+| `train_1.csv` … `train_6.csv` | Six meta-train splits |
+| `val.csv` / `test.csv` | Validation / test splits |
 
-若仓库中仅有 CSV 而无 `.npy`/`.pkl`，需按 AMLWorld 官方流程预处理后再训练。
+If you only have CSVs and no `.npy`/`.pkl`, run the official AMLWorld preprocessing first.
 
-## 快速开始
+## Quick start
 
 ```bash
 git clone <your-repo-url>
 cd LCAM-github
 
-# 只跑一个 seed：start 与 end 设为相同值
+# Single seed: set start and end to the same value
 python LCAM.py --start_seed 45 --end_seed 45 --no_early_stop
 
-# 多种子（闭区间，含 43、44、45、46）
+# Multiple seeds (inclusive range, e.g. 43–46)
 python LCAM.py --start_seed 43 --end_seed 46 --no_early_stop
 ```
 
-与主项目 [`LCAM/实验记录.txt`](../LCAM/实验记录.txt) 中 **§2 PUFA/AMLWorld few-shot** 的 **mainpath** 设置一致：
+Aligned with **mainpath** settings in the main project [`LCAM/实验记录.txt`](../LCAM/实验记录.txt) §2 (PUFA/AMLWorld few-shot):
 
-| 项 | 主仓库 `LCAM-1.py --only mainpath` | 本仓库 `LCAM.py` |
-|----|-----------------------------------|------------------|
-| 方法 | `V3_blend`（LCAM 门控） | `LCAM`（同名逻辑） |
-| 门控目标 | `gate_objective=mainpath`，`aux_lambda=0.01` | 同左（见 `config.py`） |
-| GNN | 全参数 meta 训练（unfrozen） | `run_lcam` 中 `freeze_gnn=False` |
-| 训练 | `num_epochs=10`，`--no_early_stop` 跑满 | 同左 |
-| 超参 | `n_way=2`, `k_spt=10`, `k_qry=24`, hops=2, layers=2 等 | 同左（`config.py`） |
-| 数据 | `amlworld` / `pufa` | 仅 **AMLWorld**（`Data/AMLWorld/Data/`） |
-| 骨干 | `GCN_3`（`model_types: GCN_3`） | **`GraphConv`（`GCN`）** — 精简复现版差异 |
+| Item | Main repo `LCAM-1.py --only mainpath` | This repo `LCAM.py` |
+|------|----------------------------------------|---------------------|
+| Method | `V3_blend` (LCAM gating) | `LCAM` (same logic) |
+| Gate objective | `gate_objective=mainpath`, `aux_lambda=0.01` | Same (`config.py`) |
+| GNN | Full meta-training (unfrozen) | `freeze_gnn=False` in `run_lcam` |
+| Training | `num_epochs=10`, `--no_early_stop` for full run | Same |
+| Hyperparams | `n_way=2`, `k_spt=10`, `k_qry=24`, hops=2, layers=2, etc. | Same (`config.py`) |
+| Data | `amlworld` / `pufa` | **AMLWorld** only (`Data/AMLWorld/Data/`) |
+| Backbone | `GCN_3` (`GraphConv_3`) | **`GraphConv` (`GCN`)** — slim-repo difference |
 
-等价命令示例（只跑 AMLWorld、seed 45）：
+Equivalent one-seed AMLWorld run:
 
 ```bash
-# 主仓库
+# Main repo
 python LCAM-1.py --datasets amlworld --only mainpath --start_seed 45 --end_seed 45 --no_early_stop
 
-# 本仓库
+# This repo
 python LCAM.py --start_seed 45 --end_seed 45 --no_early_stop
 ```
 
-默认写入 `results/`：日志、汇总 CSV，以及每个 seed 的子目录 `stability_amlworld_lcam_seed_<seed>/`。
+Outputs go under `results/`: logs, summary CSVs, and per-seed folders `stability_amlworld_lcam_seed_<seed>/`.
 
-## 命令行
+## CLI
 
-### `LCAM.py`（推荐入口）
+### `LCAM.py` (recommended entry)
 
-| 参数 | 含义 | 默认 |
-|------|------|------|
-| `--start_seed` / `--end_seed` | 随机种子区间（闭区间；两者相同则只跑 1 个 seed） | `10` / `18` |
-| `--no_early_stop` | 关闭早停，跑满 `num_epochs` | 关闭 |
-| `--min_epochs` | 早停前至少训练的 epoch 数 | `0` |
-| `--output_root` | 结果根目录 | `results/` |
+| Flag | Meaning | Default |
+|------|---------|---------|
+| `--start_seed` / `--end_seed` | Inclusive seed range (equal values → one seed) | `10` / `18` |
+| `--no_early_stop` | Disable early stopping; train all `num_epochs` | off |
+| `--min_epochs` | Minimum epochs before early stop can trigger | `0` |
+| `--output_root` | Results root | `results/` |
 
-### `run_lcam.py`（底层多种子脚本）
+### `run_lcam.py` (multi-seed driver)
 
-与 `LCAM.py` 等价逻辑，可直接调用，例如：
+Same behavior as `LCAM.py`, e.g.:
 
 ```bash
 python run_lcam.py --dataset amlworld --only lcam \
   --start_seed 43 --end_seed 46 --no_early_stop --output_root results
 ```
 
-`python train.py` 会转发到 `run_lcam.main()`。
+`python train.py` forwards to `run_lcam.main()`.
 
-## 配置
+## Configuration
 
-超参与数据规模默认值在 [`config.py`](config.py)，数据集路径与采样上限在 [`dataset_configs.py`](dataset_configs.py)。常用项：
+Defaults live in [`config.py`](config.py); dataset paths and sampling caps in [`dataset_configs.py`](dataset_configs.py). Common knobs:
 
-- **模型**：`model_types: ['GCN']`（GNN++ 加权 GraphConv）；`run_lcam` 中 `freeze_gnn=False`（GNN 与分类头一并 meta 训练）
-- **LCAM**：`modulation_version: 'LCAM'`，`blend_layers: 'all'`，`modulation_aux_weight: 0.01`
-- **子图**：`neighborhood_hops: 2`，`num_gnn_layers: 2`，`max_subgraph_nodes: 100`
-- **训练**：`num_epochs: 10`，`patience: 4`（可被 `--no_early_stop` 覆盖）
+- **Model**: `model_types: ['GCN']` (GNN++ weighted GraphConv); `run_lcam` sets `freeze_gnn=False` (GNN + head meta-trained)
+- **LCAM**: `modulation_version: 'LCAM'`, `blend_layers: 'all'`, `gate_objective: 'mainpath'`, `aux_lambda: 0.01`
+- **Subgraphs**: `neighborhood_hops: 2`, `num_gnn_layers: 2`, `max_subgraph_nodes: 100`
+- **Training**: `num_epochs: 10`, `patience: 4` (overridden by `--no_early_stop`)
 
-## 仓库结构
+## Layout
 
 ```
-LCAM.py              # 训练入口
-run_lcam.py          # 多种子实验与 CSV 汇总
-train.py             # 单次实验训练循环
-meta.py              # ProtoMAML + LCAM 梯度调制
-learner.py           # GraphConv + 分类头
+LCAM.py              # Training entry
+run_lcam.py          # Multi-seed runs + CSV summary
+train.py             # Single-run training loop
+meta.py              # ProtoMAML + LCAM gradient modulation
+learner.py           # GraphConv + classifier head
 gradient_modulation.py
-subgraph_*.py        # 子图采样与缓存
+mainpath.py          # Mainpath gate loss (Eq. 16)
+subgraph_*.py        # Subgraph sampling + cache
 config.py / dataset_configs.py / paths.py
 Data/AMLWorld/Data/
-results/             # 运行输出
+results/             # Run outputs
 ```
