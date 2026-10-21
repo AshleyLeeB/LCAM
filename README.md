@@ -1,8 +1,5 @@
 # LCAM
-
-Few-shot anti–money laundering (AML) **node classification** on **AMLWorld**: **ProtoMAML + weighted GraphConv (GCN)**, with **LCAM** (layer-wise inner/outer gradient gating) modulating meta-updates.
-
-This repo is a slim reproduction bundle: **AMLWorld** only, **LCAM** only, backbone **GraphConv** (weighted MPNN, `model_types: ['GCN']`).
+LCAM introduces a layer-wise gated fusion mechanism to adaptively integrate inner-loop and outer-loop gradients, capturing potentially useful gradient conflict while balancing task-specific adaptation and cross-task generalization.
 
 ## Environment
 
@@ -20,7 +17,7 @@ pip install -r requirements.txt
 
 ## Data
 
-Data root: `Data/AMLWorld/Data/` (override via `AMLWORLD` in [`paths.py`](paths.py)).
+Data root: `Data/AMLWorld/Data/` (override via `AMLWORLD` in [`paths.py`](paths.py)). The data link: 
 
 Training expects:
 
@@ -32,7 +29,7 @@ Training expects:
 | `train_1.csv` … `train_6.csv` | Six meta-train splits |
 | `val.csv` / `test.csv` | Validation / test splits |
 
-If you only have CSVs and no `.npy`/`.pkl`, run the official AMLWorld preprocessing first.
+
 
 ## Quick start
 
@@ -47,7 +44,7 @@ python LCAM.py --start_seed 45 --end_seed 45 --no_early_stop
 python LCAM.py --start_seed 43 --end_seed 46 --no_early_stop
 ```
 
-Aligned with **mainpath** settings in the main project [`LCAM/实验记录.txt`](../LCAM/实验记录.txt) §2 (PUFA/AMLWorld few-shot):
+
 
 | Item | Main repo `LCAM-1.py --only mainpath` | This repo `LCAM.py` |
 |------|----------------------------------------|---------------------|
@@ -59,39 +56,8 @@ Aligned with **mainpath** settings in the main project [`LCAM/实验记录.txt`]
 | Data | `amlworld` / `pufa` | **AMLWorld** only (`Data/AMLWorld/Data/`) |
 | Backbone | `GCN_3` (`GraphConv_3`) | **`GraphConv` (`GCN`)** — slim-repo difference |
 
-Equivalent one-seed AMLWorld run:
-
-```bash
-# Main repo
-python LCAM-1.py --datasets amlworld --only mainpath --start_seed 45 --end_seed 45 --no_early_stop
-
-# This repo
-python LCAM.py --start_seed 45 --end_seed 45 --no_early_stop
-```
-
 Outputs go under `results/`: logs, summary CSVs, and per-seed folders `stability_amlworld_lcam_seed_<seed>/`.
 
-## CLI
-
-### `LCAM.py` (recommended entry)
-
-| Flag | Meaning | Default |
-|------|---------|---------|
-| `--start_seed` / `--end_seed` | Inclusive seed range (equal values → one seed) | `10` / `18` |
-| `--no_early_stop` | Disable early stopping; train all `num_epochs` | off |
-| `--min_epochs` | Minimum epochs before early stop can trigger | `0` |
-| `--output_root` | Results root | `results/` |
-
-### `run_lcam.py` (multi-seed driver)
-
-Same behavior as `LCAM.py`, e.g.:
-
-```bash
-python run_lcam.py --dataset amlworld --only lcam \
-  --start_seed 43 --end_seed 46 --no_early_stop --output_root results
-```
-
-`python train.py` forwards to `run_lcam.main()`.
 
 ## Configuration
 
