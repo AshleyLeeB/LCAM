@@ -17,7 +17,7 @@ pip install -r requirements.txt
 
 ## Data
 
-Data root: `Data/AMLWorld/Data/` (override via `AMLWORLD` in [`paths.py`](paths.py)). The data link: 
+Data root: `Data/AMLWorld/Data/` (override via `AMLWORLD` in [`paths.py`](paths.py)). The data link: [DATA](https://www.kaggle.com/datasets/anonymouskaggledata/amlworld)
 
 Training expects:
 
